@@ -1,19 +1,46 @@
 <!-- 猜你喜欢组件 -->
 <script setup lang="ts">
 import { getHomeGoodsGuessLikeAPI } from '@/services/home'
+import type { PageParams } from '@/types/global'
 import type { GuessItem } from '@/types/home'
 import { onMounted, ref } from 'vue'
 
+// 分页参数----获取猜你喜欢的实现实现多页滑动
+// Required 用于确保类型中的所有属性都变为必需，即不能是 undefined 或 null
+const pageParams: Required<PageParams> = {
+  page: 31,
+  pageSize: 10,
+}
+// 标记猜你喜欢的分页总数已到总页数
+const finish = ref(false)
+//猜你喜欢的列表
 const guessList = ref<GuessItem[]>([])
 // 获取猜你喜欢数据
 const getHomeGoodsGuessLikeData = async () => {
-  const res = await getHomeGoodsGuessLikeAPI()
-  guessList.value = res.result.items
+  // 分页达到总页数后提示用户
+  if (finish.value === true) {
+    return uni.showToast({ icon: 'none', title: '没有更多的数据了' })
+  }
+  const res = await getHomeGoodsGuessLikeAPI(pageParams) //参数包含页数，页面数量
+  // guessList.value = res.result.items--只实现获取，没实现追加
+  // 数组追加新的猜你喜欢数据
+  guessList.value.push(...res.result.items)
+  // 分页条件----当前分页的总数小于总页数就可以继续获取
+  if (pageParams.page < res.result.pages) {
+    // 页码追加
+    pageParams.page++
+  } else {
+    finish.value = true
+  }
 }
 
 // 组件挂载完毕
 onMounted(() => {
   getHomeGoodsGuessLikeData()
+})
+// 对外暴露方法----重新命名为getMore
+defineExpose({
+  getMore: getHomeGoodsGuessLikeData,
 })
 </script>
 
@@ -37,12 +64,16 @@ onMounted(() => {
       </view>
     </navigator>
   </view>
+  <view class="loading-text">
+    {{ finish ? '没有更多数据了' : '正在加载...' }}
+  </view>
 </template>
 
 <style lang="scss">
 :host {
   display: block;
 }
+
 /* 分类标题 */
 .caption {
   display: flex;
@@ -51,6 +82,7 @@ onMounted(() => {
   padding: 36rpx 0 40rpx;
   font-size: 32rpx;
   color: #262626;
+
   .text {
     display: flex;
     justify-content: center;
@@ -75,6 +107,7 @@ onMounted(() => {
   flex-wrap: wrap;
   justify-content: space-between;
   padding: 0 20rpx;
+
   .guess-item {
     width: 345rpx;
     padding: 24rpx 20rpx 20rpx;
@@ -83,10 +116,12 @@ onMounted(() => {
     overflow: hidden;
     background-color: #fff;
   }
+
   .image {
     width: 304rpx;
     height: 304rpx;
   }
+
   .name {
     height: 75rpx;
     margin: 10rpx 0;
@@ -98,16 +133,19 @@ onMounted(() => {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
   }
+
   .price {
     line-height: 1;
     padding-top: 4rpx;
     color: #cf4444;
     font-size: 26rpx;
   }
+
   .small {
     font-size: 80%;
   }
 }
+
 // 加载提示文字
 .loading-text {
   text-align: center;
