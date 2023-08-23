@@ -1,14 +1,15 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { getHomeBannerAPI, getHomeCategoryAPI, getHomeHotAPI } from '@/services/home'
+import type { BannerItem, CategoryItem, HotItem } from '@/types/home'
 import XtxSwiper from '@/components/XtxSwiper.vue'
 import CustomNavbar from './componets/CustomNavbar.vue'
 import CategoryPanel from './componets/CategoryPanel.vue'
 import HotPanel from './componets/HotPanel.vue'
 import XtxGuess from '@/components/XtxGuess.vue'
-import { getHomeBannerAPI, getHomeCategoryAPI, getHomeHotAPI } from '@/services/home'
-import type { BannerItem, CategoryItem, HotItem } from '@/types/home'
-import { ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
-
+// 首页的骨架屏
+import PageSkeleton from './componets/PageSkeleton.vue'
 // 获取轮播图数据
 const bannerList = ref<BannerItem[]>([])
 const getHomeBannerData = async () => {
@@ -28,9 +29,15 @@ const getHomeHotData = async () => {
   const res = await getHomeHotAPI()
   hotList.value = res.result
 }
-// 页面加载时触发----类似onMounted
+
+// 是否加载中标记
+const isLoading = ref(false)
+
+// 页面加载----类似onMounted
 onLoad(async () => {
+  isLoading.value = true
   await Promise.all([getHomeBannerData(), getHomeCategoryData(), getHomeHotData()])
+  isLoading.value = false
 })
 
 // 获取猜你喜欢实例----绑定猜你喜欢组件里面的实例对象
@@ -77,14 +84,18 @@ const onRefresherrefresh = async () => {
     @refresherrefresh="onRefresherrefresh"
     :refresher-triggered="isTriggered"
   >
-    <!-- 自定义轮播图 :list="bannerList"绑定传给子组件获取的轮播图数据-->
-    <XtxSwiper :list="bannerList" />
-    <!-- 分类面板 -->
-    <CategoryPanel :list="categoryList" />
-    <!-- 热门推荐 -->
-    <HotPanel :list="hotList" />
-    <!-- 猜你喜欢 -->
-    <XtxGuess ref="guessRef" />
+    <!-- 骨架屏 -->
+    <PageSkeleton v-if="isLoading" />
+    <template v-else>
+      <!-- 自定义轮播图 :list="bannerList"绑定传给子组件获取的轮播图数据-->
+      <XtxSwiper :list="bannerList" />
+      <!-- 分类面板 -->
+      <CategoryPanel :list="categoryList" />
+      <!-- 热门推荐 -->
+      <HotPanel :list="hotList" />
+      <!-- 猜你喜欢 -->
+      <XtxGuess ref="guessRef" />
+    </template>
   </scroll-view>
 </template>
 
