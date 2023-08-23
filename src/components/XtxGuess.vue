@@ -8,7 +8,7 @@ import { onMounted, ref } from 'vue'
 // 分页参数----获取猜你喜欢的实现实现多页滑动
 // Required 用于确保类型中的所有属性都变为必需，即不能是 undefined 或 null
 const pageParams: Required<PageParams> = {
-  page: 31,
+  page: 1,
   pageSize: 10,
 }
 // 标记猜你喜欢的分页总数已到总页数

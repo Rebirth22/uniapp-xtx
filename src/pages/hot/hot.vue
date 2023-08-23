@@ -25,14 +25,18 @@ uni.setNavigationBarTitle({ title: currUrlMap!.title })
 
 // 推荐商品封面图
 const bannerPicture = ref('')
-// 推荐选项----tab导航选项
-const subTypes = ref<SubTypeItem[]>([])
+// 推荐选项----tab导航选项----追加finish属性标志全部加载商品数据，？标志可有可无，后端并不存在finish属性
+const subTypes = ref<(SubTypeItem & { finish?: boolean })[]>([])
 // tab栏高亮的下标
 const activeIndex = ref(0)
 
 // 获取热门推荐数据
 const getHotRecommendData = async () => {
-  const res = await getHotRecommendAPI(currUrlMap!.url)
+  const res = await getHotRecommendAPI(currUrlMap!.url, {
+    // 技巧：环境变量，开发环境，修改初始页面方便测试分页结束
+    page: import.meta.env.DEV ? 30 : 1,
+    pageSize: 10,
+  })
   // console.log(res)
   bannerPicture.value = res.result.bannerPicture //商品封面图片
   subTypes.value = res.result.subTypes //tab导航选项
@@ -48,8 +52,16 @@ const onScrolltolower = async () => {
   // 获取推荐页面当前的选项的商品数据信息
   const currsubTypes = subTypes.value[activeIndex.value]
   // console.log(currsubTypes)
-  // 当前页码累加
-  currsubTypes.goodsItems.page++
+  // 分页条件
+  if (currsubTypes.goodsItems.page < currsubTypes.goodsItems.pages) {
+    // 当前页码累加-----商品数据累加
+    currsubTypes.goodsItems.page++
+  } else {
+    // 标记已结束----已全部加载当前tab下所有的商品数据
+    currsubTypes.finish = true //currsubTypes中不存在finish属性，需要追加属性，在上面的定义时追加
+    // 退出并轻提示
+    return uni.showToast({ icon: 'none', title: '没有更多数据了~' })
+  }
   // 调用API传参----加载下一页信息
   const res = await getHotRecommendAPI(currUrlMap!.url, {
     subType: currsubTypes.id,
@@ -109,7 +121,7 @@ const onScrolltolower = async () => {
           </view>
         </navigator>
       </view>
-      <view class="loading-text">正在加载...</view>
+      <view class="loading-text"> {{ item.finish ? '没有更多数据了~' : '正在加载...' }}</view>
     </scroll-view>
   </view>
 </template>
