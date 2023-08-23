@@ -24,7 +24,7 @@ const getCategoryTopData = async () => {
   categoryList.value = res.result
 }
 
-// 提取当前二级分类数据
+// 提取当前二级分类数据----二级分类的数据在一级分类的同个接口返回的数据中
 const subCategoryList = computed(() => {
   return categoryList.value[activeIndex.value]?.children || []
 })
