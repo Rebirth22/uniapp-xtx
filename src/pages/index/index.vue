@@ -29,8 +29,8 @@ const getHomeHotData = async () => {
   hotList.value = res.result
 }
 // 页面加载时触发----类似onMounted
-onLoad(() => {
-  getHomeBannerData(), getHomeCategoryData(), getHomeHotData()
+onLoad(async () => {
+  await Promise.all([getHomeBannerData(), getHomeCategoryData(), getHomeHotData()])
 })
 
 // 获取猜你喜欢实例----绑定猜你喜欢组件里面的实例对象
@@ -47,8 +47,15 @@ const isTriggered = ref(false)
 const onRefresherrefresh = async () => {
   // 开启下拉刷新的动画
   isTriggered.value = true
+  // 刷新页面前重置首页的猜你喜欢数据
+  guessRef.value?.resetData()
   // 刷新数据----Promise.all可以实现同步获取数据
-  await Promise.all([getHomeBannerData(), getHomeCategoryData(), getHomeHotData()])
+  await Promise.all([
+    getHomeBannerData(),
+    getHomeCategoryData(),
+    getHomeHotData(),
+    guessRef.value?.getMore(),
+  ])
   // getHomeBannerData(), getHomeCategoryData(), getHomeHotData()----异步
 
   // 刷新完毕后关闭刷新动画
