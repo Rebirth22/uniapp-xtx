@@ -33,8 +33,7 @@ const activeIndex = ref(0)
 // 获取热门推荐数据
 const getHotRecommendData = async () => {
   const res = await getHotRecommendAPI(currUrlMap!.url)
-  console.log(res)
-
+  // console.log(res)
   bannerPicture.value = res.result.bannerPicture //商品封面图片
   subTypes.value = res.result.subTypes //tab导航选项
 }
@@ -43,6 +42,26 @@ const getHotRecommendData = async () => {
 onLoad(() => {
   getHotRecommendData()
 })
+
+// 页面滚动触底
+const onScrolltolower = async () => {
+  // 获取推荐页面当前的选项的商品数据信息
+  const currsubTypes = subTypes.value[activeIndex.value]
+  // console.log(currsubTypes)
+  // 当前页码累加
+  currsubTypes.goodsItems.page++
+  // 调用API传参----加载下一页信息
+  const res = await getHotRecommendAPI(currUrlMap!.url, {
+    subType: currsubTypes.id,
+    page: currsubTypes.goodsItems.page,
+    pageSize: currsubTypes.goodsItems.pageSize,
+  })
+  // console.log(res)
+  // 最新的商品列表
+  const newsubTypes = res.result.subTypes[activeIndex.value]
+  // 数组追加----将最新获取的商品数据追加到展示商品的数组中
+  currsubTypes.goodsItems.items.push(...newsubTypes.goodsItems.items)
+}
 </script>
 
 <template>
@@ -72,6 +91,7 @@ onLoad(() => {
       v-show="activeIndex === index"
       scroll-y
       class="scroll-view"
+      @scrolltolower="onScrolltolower"
     >
       <view class="goods">
         <navigator
