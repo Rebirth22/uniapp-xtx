@@ -1,7 +1,10 @@
+<!-- ### 更新会员头像
+1. 通过 uni.chooseMedia() 读取用户相册的照片或者拍照。
+2. 通过 uni.uploadFile()  上传用户图片。 -->
 <script setup lang="ts">
-import { getMemberProfileAPI } from '@/services/profile'
+import { getMemberProfileAPI, putMemberProfileAPI } from '@/services/profile'
 import { useMemberStore } from '@/stores/modules/member'
-import type { ProfileDetail } from '@/types/member'
+import type { Gender, ProfileDetail } from '@/types/member'
 import { onLoad } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 
@@ -14,8 +17,6 @@ const memberStore = useMemberStore()
 const profile = ref({} as ProfileDetail)
 const getMemberProfileData = async () => {
   const res = await getMemberProfileAPI()
-  console.log(res)
-
   profile.value = res.result
   // 同步 Store 的头像和昵称，用于我的页面展示
   memberStore.profile!.avatar = res.result.avatar
@@ -24,6 +25,67 @@ const getMemberProfileData = async () => {
 onLoad(() => {
   getMemberProfileData()
 })
+
+// 修改头像----和修改用户信息的接口不一样
+const onAvatarChange = () => {
+  // 调用拍照/选择图片----uni.chooseMedia() 读取用户相册的照片或者拍照
+  uni.chooseMedia({
+    // 文件个数
+    count: 1,
+    // 文件类型
+    mediaType: ['image'],
+    success: (res) => {
+      // console.log(res)
+      // 文件路径
+      const { tempFilePath } = res.tempFiles[0]
+      // 上传----uni.uploadFile()  上传用户图片
+      uni.uploadFile({
+        url: '/member/profile/avatar',
+        name: 'file',
+        filePath: tempFilePath,
+        success: (res) => {
+          // 上传成功就解构数据，获取头像对象
+          if (res.statusCode === 200) {
+            const avatar = JSON.parse(res.data).result.avatar
+            // 个人信息页数据更新
+            profile.value!.avatar = avatar
+            // 更新仓库Store头像
+            memberStore.profile!.avatar = avatar
+            uni.showToast({ icon: 'success', title: '更新成功' })
+          } else {
+            uni.showToast({ icon: 'error', title: '出现错误' })
+          }
+        },
+      })
+    },
+  })
+}
+
+// 修改性别
+const onGenderChange: UniHelper.RadioGroupOnChange = (ev) => {
+  profile.value.gender = ev.detail.value as Gender
+  // console.log(ev.detail.value)
+}
+// 修改生日
+const onBirthdayChange: UniHelper.DatePickerOnChange = (ev) => {
+  profile.value.birthday = ev.detail.value
+}
+// 点击保存修改用户信息按钮
+const onSubmit = async () => {
+  const { nickname, gender, birthday } = profile.value
+  const res = await putMemberProfileAPI({
+    nickname,
+    gender,
+    birthday,
+  })
+  // 更新仓库Store昵称
+  memberStore.profile!.nickname = res.result.nickname
+  uni.showToast({ icon: 'success', title: '保存成功' })
+  // 修改成功跳转回上级页面
+  setTimeout(() => {
+    uni.navigateBack()
+  }, 400)
+}
 </script>
 
 <template>
@@ -35,7 +97,8 @@ onLoad(() => {
     </view>
     <!-- 头像 -->
     <view class="avatar">
-      <view class="avatar-content">
+      <!-- @tap="onAvatarChange" :点击修改头像< -->
+      <view @tap="onAvatarChange" class="avatar-content">
         <image class="image" :src="profile?.avatar" mode="aspectFill" />
         <text class="text">点击修改头像</text>
       </view>
@@ -50,11 +113,14 @@ onLoad(() => {
         </view>
         <view class="form-item">
           <text class="label">昵称</text>
-          <input class="input" type="text" placeholder="请填写昵称" value="" />
+          <!-- v-model="profile!.nickname":绑定+响应修改 -->
+          <input class="input" type="text" placeholder="请填写昵称" v-model="profile!.nickname" />
         </view>
         <view class="form-item">
           <text class="label">性别</text>
-          <radio-group>
+
+          <!--  @change="onGenderChange"：选中项发生变化会触发 -->
+          <radio-group @change="onGenderChange">
             <label class="radio">
               <!-- :checked="profile?.gender === '男'"：根据后端返回的数据确认男女 -->
               <radio value="男" color="#27ba9b" :checked="profile?.gender === '男'" />
@@ -70,6 +136,7 @@ onLoad(() => {
           <text class="label">生日</text>
           <!-- mode="date:日期选择器，日期选择器，日期选择器 -->
           <picker
+            @change="onBirthdayChange"
             class="picker"
             mode="date"
             start="1900-01-01"
@@ -94,7 +161,7 @@ onLoad(() => {
         </view>
       </view>
       <!-- 提交按钮 -->
-      <button class="form-button">保 存</button>
+      <button @tap="onSubmit" class="form-button">保 存</button>
     </view>
   </view>
 </template>
