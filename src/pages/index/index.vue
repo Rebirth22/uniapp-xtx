@@ -10,6 +10,7 @@ import HotPanel from './componets/HotPanel.vue'
 import XtxGuess from '@/components/XtxGuess.vue'
 // 首页的骨架屏
 import PageSkeleton from './componets/PageSkeleton.vue'
+import { useGuessList } from '@/composables'
 // 获取轮播图数据
 const bannerList = ref<BannerItem[]>([])
 const getHomeBannerData = async () => {
@@ -40,13 +41,15 @@ onLoad(async () => {
   isLoading.value = false
 })
 
-// 获取猜你喜欢实例----绑定猜你喜欢组件里面的实例对象
-export type XtxGuessInstance = InstanceType<typeof XtxGuess>
-const guessRef = ref<XtxGuessInstance>()
-// 滚动容器触底的时候触发
-const onScrollower = () => {
-  guessRef.value?.getMore()
-}
+// // 获取猜你喜欢实例----绑定猜你喜欢组件里面的实例对象
+// export type XtxGuessInstance = InstanceType<typeof XtxGuess>
+// const guessRef = ref<XtxGuessInstance>()
+// // 滚动容器触底的时候触发
+// const onScrollower = () => {
+//   guessRef.value?.getMore()
+// }
+// 封装在composables的文件夹上
+const { guessRef, onScrolltolower } = useGuessList()
 
 //设置当前下拉刷新状态,默认关闭
 const isTriggered = ref(false)
@@ -79,7 +82,7 @@ const onRefresherrefresh = async () => {
   :refresher-triggered：设置当前下拉刷新状态-->
   <scroll-view
     scroll-y
-    @scrolltolower="onScrollower"
+    @scrolltolower="onScrolltolower"
     refresher-enabled
     @refresherrefresh="onRefresherrefresh"
     :refresher-triggered="isTriggered"
