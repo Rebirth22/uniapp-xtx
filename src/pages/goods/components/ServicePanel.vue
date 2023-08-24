@@ -1,4 +1,4 @@
-<!-- 商品详情的弹出层显示内容 -->
+<!-- 商品服务的弹出层显示内容 -->
 <script setup lang="ts">
 // 子调父----触发关闭弹出层功能
 const emit = defineEmits<{
