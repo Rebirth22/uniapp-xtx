@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import XtxSwiper from '@/components/XtxSwiper.vue'
-import PageSkeleton from './componets/PageSkeleton.vue'
+import PageSkeleton from './components/PageSkeleton.vue'
 import { getCategoryTopAPI } from '@/services/category'
 import { getHomeBannerAPI } from '@/services/home'
 import type { CategoryTopItem } from '@/types/category'
