@@ -3,11 +3,16 @@
 import { getGoodsByIdAPI } from '@/services/goods'
 import type { GoodsResult } from '@/types/goods'
 import { onLoad } from '@dcloudio/uni-app'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 // 弹出层显示的内容
 import AddressPanel from './components/AddressPanel.vue'
 import ServicePanel from './components/ServicePanel.vue'
-
+import type {
+  SkuPopupEvent,
+  SkuPopupInstance,
+  SkuPopupLocaldata,
+} from '@/components/vk-data-goods-sku-popup/vk-data-goods-sku-popup'
+import { postMemberCartAPI } from '@/services/cart'
 // 获取屏幕边界到安全区域距离
 const { safeAreaInsets } = uni.getSystemInfoSync()
 
@@ -22,6 +27,30 @@ const goods = ref<GoodsResult>()
 const getGoodsByIdData = async () => {
   const res = await getGoodsByIdAPI(query.id)
   goods.value = res.result
+  // 处理数据成SKU需要的数据格式----用于展示商品规格
+  localdata.value = {
+    _id: res.result.id,
+    name: res.result.name,
+    goods_thumb: res.result.mainPictures[0],
+    // 后端返回的数据不一样，需要映射数据
+    spec_list: res.result.specs.map((v) => {
+      return {
+        name: v.name,
+        list: v.values,
+      }
+    }),
+    sku_list: res.result.skus.map((v) => {
+      return {
+        _id: v.id, //SKU ID
+        goods_id: res.result.id, //商品 ID
+        goods_name: res.result.name, //商品名称
+        image: v.picture, //商品图片
+        price: v.price * 100, //SKU 价格 * 100, 注意：需要乘以 100
+        stock: v.inventory, //SKU 库存
+        sku_name_arr: v.specs.map((vv) => vv.valueName), //SKU 规格组成, 注意：需要与 spec_list 数组顺序对应
+      }
+    }),
+  }
 }
 
 // 页面加载
@@ -55,9 +84,65 @@ const openPopup = (name: typeof popupName.value) => {
   popupName.value = name
   popup.value?.open()
 }
+
+// 是否显示SKU组件
+const isShowSku = ref(false)
+// SKU商品信息
+const localdata = ref({} as SkuPopupLocaldata)
+// 按钮模式----Both || Cart || Buy
+enum SkuMode {
+  Both = 1,
+  Cart = 2,
+  Buy = 3,
+}
+const mode = ref<SkuMode>(SkuMode.Cart)
+
+// 打开SKU弹窗修改按钮模式
+const openSkuPopup = (val: SkuMode) => {
+  // 显示SKU弹窗
+  isShowSku.value = true
+  // 修改按钮模式
+  mode.value = val
+}
+// SKU组件实例
+const skuPopupRef = ref<SkuPopupInstance>()
+// 计算被选中的值
+const selectArrText = computed(() => {
+  return skuPopupRef.value?.selectArr?.join(' ').trim() || '请选择商品规格'
+})
+
+// 加入购物车事件
+const onAddCart = async (ev: SkuPopupEvent) => {
+  await postMemberCartAPI({ skuId: ev._id, count: ev.buy_num })
+  uni.showToast({ title: '添加成功' })
+  isShowSku.value = false
+}
 </script>
 
 <template>
+  <!-- SKU弹窗组件：选择商品规格的界面 -->
+  <!-- v-model="isShowSku"：控制显示
+  :localdata="localdata"：商品信息
+  :mode="mode"：控制sku选项框的按钮个数，Both || Cart || Buy
+  ref="skuPopupRef"：获取SKU组件实例
+  @add-cart="onAddCart"：加入购物车时间
+  add-cart-background-color="#FFA868"：加入购物车的按钮
+  buy-now-background-color="#27BA9B"：立即购买商品的按钮
+  :actived-style="{}"：样式 - 按钮点击时的样式
+-->
+  <vk-data-goods-sku-popup
+    v-model="isShowSku"
+    :localdata="localdata"
+    ref="skuPopupRef"
+    @add-cart="onAddCart"
+    :actived-style="{
+      color: '#27BA9B',
+      borderColor: '#27BA9B',
+      backgroundColor: '#E9F8F5',
+    }"
+    add-cart-background-color="#FFA868"
+    buy-now-background-color="#27BA9B"
+  />
   <scroll-view scroll-y class="viewport">
     <!-- 基本信息 -->
     <view class="goods">
@@ -89,9 +174,10 @@ const openPopup = (name: typeof popupName.value) => {
 
       <!-- 操作面板 -->
       <view class="action">
-        <view class="item arrow">
+        <view class="item arrow" @tap="openSkuPopup(SkuMode.Both)">
           <text class="label">选择</text>
-          <text class="text ellipsis"> 请选择商品规格 </text>
+          <!-- {{ selectArrText }}根据组件实例获取到的数据显示：105 -->
+          <text class="text ellipsis"> {{ selectArrText }} </text>
         </view>
         <!-- @tap="openPopup('address')"：显示弹出层信息 -->
         <view class="item arrow" @tap="openPopup('address')">
@@ -171,14 +257,13 @@ const openPopup = (name: typeof popupName.value) => {
       </navigator>
     </view>
     <view class="buttons">
-      <view class="addcart"> 加入购物车 </view>
-      <view class="buynow"> 立即购买 </view>
+      <view class="addcart" @tap="openSkuPopup(SkuMode.Cart)"> 加入购物车 </view>
+      <view class="buynow" @tap="openSkuPopup(SkuMode.Buy)"> 立即购买 </view>
     </view>
   </view>
 
   <!-- uni-ui 弹出层 -->
   <view>
-    <button>打开弹窗</button>
     <uni-popup ref="popup" type="bottom" background-color="#fff">
       <AddressPanel v-if="popupName === 'address'" @close="popup?.close()" />
       <ServicePanel v-if="popupName === 'service'" @close="popup?.close()" />
