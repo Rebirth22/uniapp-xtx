@@ -82,11 +82,12 @@ const onFullLocationChange: UniHelper.RegionPickerOnChange = (ev) => {
 }
 // 点击保存修改用户信息按钮
 const onSubmit = async () => {
-  const { nickname, gender, birthday } = profile.value
+  const { nickname, gender, birthday, profession } = profile.value
   const res = await putMemberProfileAPI({
     nickname,
     gender,
     birthday,
+    profession, //修改职业，用v-model绑定即可
     // 后端接口接收的城市编码数据----以元组的形式存储在 fullLocationCode
     provinceCode: fullLocationCode[0],
     cityCode: fullLocationCode[1],
@@ -178,7 +179,7 @@ const onSubmit = async () => {
         </view>
         <view class="form-item">
           <text class="label">职业</text>
-          <input class="input" type="text" placeholder="请填写职业" :value="profile?.profession" />
+          <input class="input" type="text" placeholder="请填写职业" v-model="profile!.profession" />
         </view>
       </view>
       <!-- 提交按钮 -->
