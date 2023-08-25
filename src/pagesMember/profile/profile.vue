@@ -17,6 +17,7 @@ const memberStore = useMemberStore()
 const profile = ref({} as ProfileDetail)
 const getMemberProfileData = async () => {
   const res = await getMemberProfileAPI()
+  console.log(res)
   profile.value = res.result
   // 同步 Store 的头像和昵称，用于我的页面展示
   memberStore.profile!.avatar = res.result.avatar
@@ -70,6 +71,15 @@ const onGenderChange: UniHelper.RadioGroupOnChange = (ev) => {
 const onBirthdayChange: UniHelper.DatePickerOnChange = (ev) => {
   profile.value.birthday = ev.detail.value
 }
+
+// 修改城市----前端需要具体的城市名字，后端需要城市编码
+let fullLocationCode: [string, string, string] = ['', '', ''] //传个后端
+const onFullLocationChange: UniHelper.RegionPickerOnChange = (ev) => {
+  // 修改前端界面显示的信息
+  profile.value.fullLocation = ev.detail.value.join(' ')
+  // 提交后端更新
+  fullLocationCode = ev.detail.code! //!:非空断言，不为undefined
+}
 // 点击保存修改用户信息按钮
 const onSubmit = async () => {
   const { nickname, gender, birthday } = profile.value
@@ -77,6 +87,10 @@ const onSubmit = async () => {
     nickname,
     gender,
     birthday,
+    // 后端接口接收的城市编码数据----以元组的形式存储在 fullLocationCode
+    provinceCode: fullLocationCode[0],
+    cityCode: fullLocationCode[1],
+    countyCode: fullLocationCode[2],
   })
   // 更新仓库Store昵称
   memberStore.profile!.nickname = res.result.nickname
@@ -147,11 +161,18 @@ const onSubmit = async () => {
             <view class="placeholder" v-else>请选择日期</view>
           </picker>
         </view>
+
         <view class="form-item">
           <text class="label">城市</text>
-          <!-- mode="region":省市区选择器 -->
-          <picker class="picker" mode="region" :value="profile?.fullLocation?.split('')">
-            <view v-if="profile?.fullLocation">{{ profile?.fullLocation }}</view>
+          <!-- mode="region":省市区选择器
+          前端需要具体的城市名字，后端需要城市编码 -->
+          <picker
+            @change="onFullLocationChange"
+            mode="region"
+            class="picker"
+            :value="profile?.fullLocation?.split(' ')"
+          >
+            <view v-if="profile?.fullLocation">{{ profile.fullLocation }}</view>
             <view class="placeholder" v-else>请选择城市</view>
           </picker>
         </view>
