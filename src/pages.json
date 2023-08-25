@@ -33,6 +33,12 @@
       }
     },
     {
+      "path": "pages/cart/cart2",
+      "style": {
+        "navigationBarTitleText": "购物车"
+      }
+    },
+    {
       "path": "pages/category/category",
       "style": {
         "navigationBarTitleText": "分类"
@@ -63,7 +69,7 @@
     "navigationBarBackgroundColor": "#F8F8F8",
     "backgroundColor": "#F8F8F8"
   },
-  // 设置 TabBar
+  // 设置 TabBar:小程序跳转到 tabBar 页面时，会关闭其他所有非 tabBar 页面，所以小程序的 tabBar 页没有后退按钮。
   "tabBar": {
     "color": "#333",
     "selectedColor": "#27ba9b",
