@@ -54,29 +54,63 @@ const onSwitchChange: UniHelper.SwitchOnChange = (ev) => {
   form.value.isDefault = ev.detail.value ? 1 : 0 //isDefault定义是number，用三元确定布尔值重新赋值 ev.detail.value
 }
 
+// 定义校验规则
+const rules: UniHelper.UniFormsRules = {
+  // 收货人姓名对应规则
+  receiver: {
+    rules: [{ required: true, errorMessage: '请输入收货人姓名' }],
+  },
+  // 收货人手机号码对应规则
+  contact: {
+    rules: [
+      { required: true, errorMessage: '请输入联系方式' },
+      { pattern: /^1[3-9]\d{9}$/, errorMessage: '手机号格式不正确' },
+    ],
+  },
+  // 对应规则
+  countyCode: {
+    rules: [{ required: true, errorMessage: '请选择所在地区' }],
+  },
+  // 街道、楼牌号等信息对应规则
+  address: {
+    rules: [{ required: true, errorMessage: '请选择详细地址' }],
+  },
+}
+// 表单组件实例
+const formRef = ref<UniHelper.UniFormsInstance>()
+
 // 提交表单
 const onSubmit = async () => {
-  // 判断链接有无id
-  if (query.id) {
-    // 修改地址请求----跳转的链接有id
-    await putMemberAddressByIdAPI(query.id, form.value)
-  } else {
-    // 新建地址请求----跳转的链接没有id
-    await postMemberAddressAPI(form.value) //新建的地址接口
+  try {
+    // 对表单实例进行校验
+    // ?.: 这是 TypeScript 或 JavaScript 中的可选链操作符。它的作用是在调用属性或方法之前检查对象是否为非空或未定义。如果对象为 null 或 undefined，那么调用就会被短路，避免了潜在的错误。
+    await formRef.value?.validate?.()
+
+    // 判断链接有无id
+    if (query.id) {
+      // 修改地址请求----跳转的链接有id
+      await putMemberAddressByIdAPI(query.id, form.value)
+    } else {
+      // 新建地址请求----跳转的链接没有id
+      await postMemberAddressAPI(form.value) //新建的地址接口
+    }
+    // console.log(res)
+    // 成功提示
+    uni.showToast({ icon: 'success', title: query.id ? '修改成功' : '添加成功' })
+    // 返回上一页
+    setTimeout(() => {
+      uni.navigateBack()
+    }, 400)
+  } catch (error) {
+    uni.showToast({ icon: 'error', title: '请填写完整信息' })
   }
-  // console.log(res)
-  // 成功提示
-  uni.showToast({ icon: 'success', title: query.id ? '修改成功' : '添加成功' })
-  // 返回上一页
-  setTimeout(() => {
-    uni.navigateBack()
-  }, 400)
 }
 </script>
 
 <template>
   <view class="content">
-    <uni-forms>
+    <!-- :rules="rules"：表单校验规则 :model="form"：绑定表单 ref="formRef"：表单组件实例-->
+    <uni-forms :rules="rules" :model="form" ref="formRef">
       <!-- 表单内容 -->
       <uni-forms-item name="receiver" class="form-item">
         <text class="label">收货人</text>
