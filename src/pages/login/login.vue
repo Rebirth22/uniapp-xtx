@@ -37,8 +37,8 @@ const loginSuccess = (profile: LoginResult) => {
   uni.showToast({ icon: 'success', title: '登录成功' })
   setTimeout(() => {
     // 页面跳转
-    uni.switchTab({ url: '/pages/my/my' })
-    // uni.navigateBack()
+    // uni.switchTab({ url: '/pages/my/my' })
+    uni.navigateBack() //如果是查看购物车页面时登录，登录后可以直接返回登录页
   }, 500)
 }
 </script>
