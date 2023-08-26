@@ -91,6 +91,18 @@ const selectedCartListMoney = computed(() => {
     .reduce((sum, item) => sum + item.count * item.nowPrice, 0)
     .toFixed(2)
 })
+
+// 结算按钮
+const gotoPayment = () => {
+  if (selectedCartListCount.value === 0) {
+    return uni.showToast({
+      icon: 'none',
+      title: '请选择商品',
+    })
+  }
+  // 跳转到结算页
+  uni.navigateTo({ url: '/pagesOrder/createOrder/createOrder' })
+}
 </script>
 
 <template>
@@ -168,8 +180,15 @@ const selectedCartListMoney = computed(() => {
         <text @tap="onChangeSelectedAll" class="all" :class="{ checked: isSelectedAll }">全选</text>
         <text class="text">合计:</text>
         <text class="amount">{{ selectedCartListMoney }}</text>
+
+        <!-- 结算跳转
+        :class="{ disabled: selectedCartListCount === 0 }"：选中的商品数组长度不为空-->
         <view class="button-grounp">
-          <view class="button payment-button" :class="{ disabled: true }">
+          <view
+            @tap="gotoPayment"
+            class="button payment-button"
+            :class="{ disabled: selectedCartListCount === 0 }"
+          >
             去结算({{ selectedCartListCount }})</view
           >
         </view>
