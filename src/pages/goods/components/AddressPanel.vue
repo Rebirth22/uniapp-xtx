@@ -32,7 +32,7 @@ const emit = defineEmits<{
       </view>
     </view>
     <view class="footer">
-      <view class="button primary"> 新建地址 </view>
+      <view class="button primary" url="/pagesMember/address-form/address-form"> 新建地址 </view>
       <view v-if="false" class="button primary">确定</view>
     </view>
   </view>
